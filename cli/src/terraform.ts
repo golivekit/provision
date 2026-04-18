@@ -1,6 +1,8 @@
+import os from 'node:os';
+import path from 'node:path';
 import { execa } from 'execa';
 import { readBool } from './prompts.js';
-import { info, success, warn, error } from './ui.js';
+import { info, warn } from './ui.js';
 import type { Provider } from './types.js';
 
 function tfArgs(dir: string, extra: string[]): [string, string[]] {
@@ -67,6 +69,51 @@ export async function tfImport(
   info(`Importing existing resource: ${resource}`);
   const [cmd, args] = tfArgs(dir, ['import', resource, id]);
   await execa(cmd, args, { stdio: 'inherit' });
+}
+
+async function tfOutputRaw(
+  dir: string,
+  outputName: string,
+): Promise<string | undefined> {
+  const [cmd, args] = tfArgs(dir, ['output', '-raw', outputName]);
+
+  try {
+    const { stdout } = await execa(cmd, args);
+    const value = stdout.trim();
+    return value ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export async function clearStaleKnownHosts(dir: string): Promise<string[]> {
+  const knownHostsFile = path.join(os.homedir(), '.ssh', 'known_hosts');
+  const hosts = Array.from(
+    new Set(
+      (await Promise.all([
+        tfOutputRaw(dir, 'server_ip'),
+        tfOutputRaw(dir, 'server_ipv6'),
+      ])).filter((host): host is string => Boolean(host)),
+    ),
+  );
+
+  const clearedHosts: string[] = [];
+
+  for (const host of hosts) {
+    try {
+      await execa('ssh-keygen', ['-F', host, '-f', knownHostsFile], {
+        stdio: 'pipe',
+      });
+      await execa('ssh-keygen', ['-R', host, '-f', knownHostsFile], {
+        stdio: 'pipe',
+      });
+      clearedHosts.push(host);
+    } catch {
+      // Ignore missing entries or absent known_hosts file.
+    }
+  }
+
+  return clearedHosts;
 }
 
 export async function showOutputs(

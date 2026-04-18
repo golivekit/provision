@@ -13,6 +13,7 @@ import {
   tfPlan,
   tfApply,
   tfDestroy,
+  clearStaleKnownHosts,
   showOutputs,
 } from './terraform.js';
 import { header, info, success, error } from './ui.js';
@@ -149,9 +150,15 @@ async function runApplyOrPlan(args: CliArgs): Promise<void> {
   }
 
   await tfApply(dir);
+  const clearedHosts = await clearStaleKnownHosts(dir);
   await showOutputs(dir, sshKeyPath);
 
   success('Provisioning complete!');
+  if (clearedHosts.length > 0) {
+    info(
+      `Removed stale SSH host key entries for: ${clearedHosts.join(', ')}`,
+    );
+  }
   info(
     'Note: cloud-init runs on first boot (~2 min). SSH may not be available immediately.',
   );
