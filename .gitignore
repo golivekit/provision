@@ -1,0 +1,14 @@
+# Terraform state — never commit
+*.tfstate
+*.tfstate.backup
+*.tfstate.lock.info
+.terraform/
+.terraform.lock.hcl
+tfplan
+
+# Secrets — never commit
+terraform.tfvars
+*.auto.tfvars
+
+# macOS
+.DS_Store
