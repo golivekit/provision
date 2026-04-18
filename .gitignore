@@ -6,6 +6,8 @@
 .terraform.lock.hcl
 tfplan
 
+provision-out
+
 # Secrets — never commit
 terraform.tfvars
 *.auto.tfvars
