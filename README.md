@@ -1,3 +1,5 @@
+GoLiveKit website: https://golivekit.com/
+
 # GoLiveKit Provision
 
 Standalone Terraform provisioning CLI for DigitalOcean, Hetzner Cloud, and AWS EC2.
@@ -51,6 +53,7 @@ The script will:
 ├── cli/                          ← TypeScript CLI source
 │   ├── package.json
 │   ├── tsconfig.json
+│   ├── terraform/                ← Bundled Terraform defaults published with the package
 │   └── src/
 │       ├── index.ts              ← entry point (apply / plan / destroy)
 │       ├── providers/
@@ -58,30 +61,12 @@ The script will:
 │       │   ├── hetzner.ts
 │       │   └── aws.ts
 │       └── ...                   ← ui, prompts, ssh, terraform, tfvars helpers
-├── terraform/                    ← Bundled Terraform defaults published with the package
-│   ├── modules/
-│   │   └── cloud-init/
-│   │       └── server-init.yaml.tpl
-│   ├── providers/                ← one subfolder per cloud provider
-│   │   ├── digitalocean/
-│   │   │   ├── main.tf
-│   │   │   ├── variables.tf
-│   │   │   ├── outputs.tf
-│   │   │   └── terraform.tfvars.example
-│   │   ├── hetzner/
-│   │   │   ├── main.tf
-│   │   │   ├── variables.tf
-│   │   │   ├── outputs.tf
-│   │   │   └── terraform.tfvars.example
-│   │   └── aws/
-│   │       ├── main.tf
-│   │       ├── variables.tf
-│   │       ├── outputs.tf
-│   │       └── terraform.tfvars.example
 └── .gitignore                    ← secrets & state are git-ignored
 ```
 
 At runtime the CLI copies the provider defaults into `<out>/<provider>/` and runs Terraform there, so `terraform.tfvars`, state, and plan files stay project-scoped and portable.
+
+Terraform source files live in `cli/terraform`. Update those files when you need to change the bundled provider defaults or cloud-init template.
 
 ## Provider setup
 
@@ -113,7 +98,7 @@ AWS interactive discovery uses the AWS CLI to load the current regions, instance
 
 ## What gets installed on the server
 
-The bundled cloud-init template (`terraform/modules/cloud-init/server-init.yaml.tpl`) runs on first boot:
+The bundled cloud-init template (`cli/terraform/modules/cloud-init/server-init.yaml.tpl`) runs on first boot:
 
 - **Docker CE** + **Docker Compose plugin**
 - **UFW** firewall — opens ports 22, 80, 443 only

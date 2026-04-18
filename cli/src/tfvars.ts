@@ -89,7 +89,7 @@ export async function writeTfvars(
 
 function packagePath(...segments: string[]): string {
   const dir = fileURLToPath(new URL('.', import.meta.url));
-  return path.resolve(dir, '..', '..', ...segments);
+  return path.resolve(dir, '..', ...segments);
 }
 
 export function defaultOutDir(): string {

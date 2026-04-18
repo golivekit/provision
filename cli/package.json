@@ -2,6 +2,24 @@
   "name": "@golivekit/provision",
   "version": "1.0.0",
   "description": "Interactive CLI for provisioning GoLiveKit infrastructure via Terraform",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/golivekit/provision.git"
+  },
+  "homepage": "https://golivekit.com/",
+  "bugs": {
+    "url": "https://github.com/golivekit/provision/issues"
+  },
+  "license": "MIT",
+  "keywords": [
+    "terraform",
+    "provisioning",
+    "vps",
+    "digitalocean",
+    "hetzner",
+    "aws",
+    "golivekit"
+  ],
   "type": "module",
   "bin": {
     "provision": "./dist/index.js"
@@ -14,7 +32,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node ./scripts/sync-terraform.mjs && tsc",
+    "build": "tsc",
     "dev": "tsc --watch",
     "prepack": "pnpm build",
     "start": "node ./dist/index.js"
