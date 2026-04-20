@@ -1,6 +1,6 @@
 {
   "name": "@golivekit/provision",
-  "version": "1.0.4",
+  "version": "1.0.0",
   "description": "Interactive CLI for provisioning GoLiveKit infrastructure via Terraform",
   "repository": {
     "type": "git",
