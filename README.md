@@ -225,9 +225,15 @@ Terraform source files live in `terraform/`. Update those files when you need to
 
 ## Release
 
-Tag pushes matching `v*.*.*` publish the package from the repo root.
+Releases are fully automated via [Semantic Release](https://semantic-release.gitbook.io). Push to `main` with [Conventional Commits](https://www.conventionalcommits.org) and the CI will determine the version, publish to npm, create a GitHub release, and update `CHANGELOG.md` automatically.
+
+| Commit prefix | Release type |
+|---|---|
+| `fix: ...` | patch (1.0.0 → 1.0.1) |
+| `feat: ...` | minor (1.0.0 → 1.1.0) |
+| `feat!: ...` / `BREAKING CHANGE:` | major (1.0.0 → 2.0.0) |
 
 ```bash
-pnpm version patch
-git push --follow-tags
+git commit -m "feat: add support for new provider"
+git push origin main
 ```
