@@ -2,7 +2,7 @@
 
 | Tool | Install |
 |---|---|
-| [Node.js](https://nodejs.org) ≥ 18 | `brew install node` |
+| [Node.js](https://nodejs.org) ≥ 22 | `brew install node` |
 | [Terraform](https://developer.hashicorp.com/terraform/install) ≥ 1.7 | `brew install terraform` |
 | A cloud provider account & API token | see provider section below |
 
