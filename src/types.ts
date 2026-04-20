@@ -19,6 +19,7 @@ export interface DigitalOceanConfig {
   size: string;
   image: string;
   backupsEnabled: boolean;
+  monitoringEnabled: boolean;
   ipv4Enabled: boolean;
   ipv6Enabled: boolean;
 }

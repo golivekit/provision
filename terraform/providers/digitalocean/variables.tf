@@ -44,6 +44,12 @@ variable "backups_enabled" {
   default     = false
 }
 
+variable "monitoring_enabled" {
+  description = "Enable DigitalOcean monitoring agent (free)"
+  type        = bool
+  default     = true
+}
+
 variable "ipv4_enabled" {
   description = "Public IPv4 is always enabled for this module"
   type        = bool

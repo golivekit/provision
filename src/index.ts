@@ -32,6 +32,7 @@ import {
   configureAws,
   writeAwsTfvars,
   importAwsSshKey,
+  importAwsSecurityGroup,
 } from './providers/aws.js';
 
 type Subcommand = 'apply' | 'plan' | 'destroy';
@@ -133,6 +134,7 @@ async function runApplyOrPlan(args: CliArgs): Promise<void> {
     await writeAwsTfvars(cfg, outDir);
     await tfInit(dir);
     await importAwsSshKey(cfg, cfg.region, outDir);
+    await importAwsSecurityGroup(cfg, cfg.region, outDir);
     sshKeyPath = cfg.sshKey.publicKeyPath.replace(/\.pub$/, '');
   }
 

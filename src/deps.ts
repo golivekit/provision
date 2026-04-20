@@ -28,15 +28,6 @@ export async function checkDeps(): Promise<void> {
   }
 }
 
-export async function checkProviderDeps(provider: Provider): Promise<void> {
-  if (provider !== 'aws') return;
-
-  try {
-    await execa('which', ['aws']);
-    info('aws CLI found');
-  } catch {
-    error(
-      '"aws" CLI not found. Install it first:\n     brew install awscli  or  https://aws.amazon.com/cli/',
-    );
-  }
+export async function checkProviderDeps(_provider: Provider): Promise<void> {
+  // All provider API calls are made via SDK — no additional CLI tools required
 }

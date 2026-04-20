@@ -14,3 +14,6 @@ terraform.tfvars
 
 # macOS
 .DS_Store
+
+dist/
+node_modules/

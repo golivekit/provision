@@ -25,11 +25,12 @@ async function fetchRegions(token: string): Promise<ProviderOption[]> {
     .map((r) => ({ value: r.slug, label: `${r.slug}  —  ${r.name}` }));
 }
 
-async function fetchSizes(token: string): Promise<ProviderOption[]> {
+async function fetchSizes(token: string, region: string): Promise<ProviderOption[]> {
   info('Fetching DigitalOcean droplet sizes...');
-  const data = await doFetch<{ sizes: { slug: string; vcpus: number; memory: number; price_monthly: number; available: boolean }[] }>(token, '/sizes');
+  const data = await doFetch<{ sizes: { slug: string; vcpus: number; memory: number; price_monthly: number; available: boolean; regions: string[] }[] }>(token, '/sizes?per_page=200');
   return data.sizes
-    .filter((s) => s.available)
+    .filter((s) => s.available && s.regions.includes(region))
+    .sort((a, b) => a.price_monthly - b.price_monthly)
     .map((s) => ({
       value: s.slug,
       label: `${s.slug}  —  ${s.vcpus} vCPU / ${s.memory / 1024}GB RAM  ($${s.price_monthly}/mo)`,
@@ -68,7 +69,7 @@ export async function configureDigitalOcean(
   const region = await chooseFromOptions('Select region', regions, existingRegion ?? 'fra1');
 
   // Droplet size
-  const sizes = await fetchSizes(token);
+  const sizes = await fetchSizes(token, region);
   const existingSize = await tfvarsStringValue(tfvarsFile, 'size');
   const size = await chooseFromOptions('Select droplet size', sizes, existingSize ?? 's-2vcpu-4gb');
 
@@ -81,8 +82,11 @@ export async function configureDigitalOcean(
   const existingBackups = await tfvarsBoolValue(tfvarsFile, 'backups_enabled');
   const backupsEnabled = await readBool('Enable weekly backups?', existingBackups ?? false);
 
+  const existingMonitoring = await tfvarsBoolValue(tfvarsFile, 'monitoring_enabled');
+  const monitoringEnabled = await readBool('Enable Monitoring? Improved Metrics and monitoring (Free)', existingMonitoring ?? true);
+
   const existingIpv6 = await tfvarsBoolValue(tfvarsFile, 'ipv6_enabled');
-  const ipv6Enabled = await readBool('Enable IPv6?', existingIpv6 ?? false);
+  const ipv6Enabled = await readBool('Enable IPv6?', existingIpv6 ?? true);
 
   return {
     token,
@@ -93,6 +97,7 @@ export async function configureDigitalOcean(
     size,
     image,
     backupsEnabled,
+    monitoringEnabled,
     ipv4Enabled: true,
     ipv6Enabled,
   };
@@ -108,9 +113,10 @@ export function buildDigitalOceanTfvars(cfg: DigitalOceanConfig): string {
     `region          = "${cfg.region}"`,
     `size            = "${cfg.size}"`,
     `image           = "${cfg.image}"`,
-    `backups_enabled = ${cfg.backupsEnabled}`,
-    `ipv4_enabled    = ${cfg.ipv4Enabled}`,
-    `ipv6_enabled    = ${cfg.ipv6Enabled}`,
+    `backups_enabled     = ${cfg.backupsEnabled}`,
+    `monitoring_enabled  = ${cfg.monitoringEnabled}`,
+    `ipv4_enabled        = ${cfg.ipv4Enabled}`,
+    `ipv6_enabled        = ${cfg.ipv6Enabled}`,
     `tags            = ["production", "app"]`,
     '',
   ].join('\n');

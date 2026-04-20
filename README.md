@@ -1,44 +1,30 @@
-GoLiveKit website: https://golivekit.com/
-
-# GoLiveKit Provision
-
-Standalone Terraform provisioning CLI for DigitalOcean, Hetzner Cloud, and AWS EC2.
-
-GitHub repository: https://github.com/golivekit/provision
-
 ## Prerequisites
 
 | Tool | Install |
 |---|---|
 | [Node.js](https://nodejs.org) ≥ 18 | `brew install node` |
-| [pnpm](https://pnpm.io) | `npm i -g pnpm` |
 | [Terraform](https://developer.hashicorp.com/terraform/install) ≥ 1.7 | `brew install terraform` |
-| An SSH key pair | `ssh-keygen -t ed25519 -C "you@example.com"` |
-| AWS CLI (required for AWS only) | `brew install awscli` |
 | A cloud provider account & API token | see provider section below |
-
-Published package: `@golivekit/provision`
 
 ## Quick start
 
 ```bash
-# Run from npm
-npx @golivekit/provision apply
-npx @golivekit/provision plan --out ./infra
-npx @golivekit/provision apply --out ./infra --cloud-init ./my-init.yaml
-npx @golivekit/provision destroy --out ./infra
+# Provision a server — prompts guide you through every step
+npx @golivekit/provision
 
-# Local development from this repo
-cd cli
-pnpm install
-pnpm build
-node ./dist/index.js apply
+# Provision to a custom output directory with a custom cloud-init template
+npx @golivekit/provision --out ./infra --cloud-init ./my-init.yaml
+
+# Preview the Terraform plan without applying
+npx @golivekit/provision plan --out ./infra
+
+# Tear down the provisioned infrastructure
+npx @golivekit/provision destroy --out ./infra
 ```
 
-If `--out` is omitted, the CLI prompts for an output directory and defaults to `./provision-out`.
-If `--cloud-init` is omitted, the CLI prompts for an optional custom template path and otherwise uses the bundled default.
+`apply` is the default subcommand and can be omitted. `--out` defaults to `./provision-out`.
 
-The script will:
+The CLI will:
 1. Ask which cloud provider to use
 2. Load live provider options for locations, server types, and images
 3. Ask for token or credentials, SSH key handling, server name, backup mode, and IPv4 or IPv6
@@ -46,34 +32,12 @@ The script will:
 5. Generate `terraform.tfvars` automatically
 6. Run `terraform init`, show the plan, ask for confirmation, then apply
 
-## Repository layout
-
-```
-.
-├── cli/                          ← TypeScript CLI source
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── terraform/                ← Bundled Terraform defaults published with the package
-│   └── src/
-│       ├── index.ts              ← entry point (apply / plan / destroy)
-│       ├── providers/
-│       │   ├── digitalocean.ts
-│       │   ├── hetzner.ts
-│       │   └── aws.ts
-│       └── ...                   ← ui, prompts, ssh, terraform, tfvars helpers
-└── .gitignore                    ← secrets & state are git-ignored
-```
-
-At runtime the CLI copies the provider defaults into `<out>/<provider>/` and runs Terraform there, so `terraform.tfvars`, state, and plan files stay project-scoped and portable.
-
-Terraform source files live in `cli/terraform`. Update those files when you need to change the bundled provider defaults or cloud-init template.
-
 ## Provider setup
 
 ### DigitalOcean
 
 1. Create an API token at <https://cloud.digitalocean.com/account/api/tokens>
-2. Run `npx @golivekit/provision apply` and paste the token when prompted
+2. Run `npx @golivekit/provision` and paste the token when prompted
 3. Select an existing local public key or let the CLI generate a new one
 
 Useful region slugs: `fra1` (Frankfurt), `ams3` (Amsterdam), `nyc3` (New York), `sfo3` (San Francisco), `sgp1` (Singapore)
@@ -81,24 +45,122 @@ Useful region slugs: `fra1` (Frankfurt), `ams3` (Amsterdam), `nyc3` (New York), 
 ### Hetzner Cloud
 
 1. Create a project & API token at <https://console.hetzner.cloud>
-2. Run `npx @golivekit/provision apply` and paste the token when prompted
+2. Run `npx @golivekit/provision` and paste the token when prompted
 3. Select an existing local public key or let the CLI generate a new one
 
 Useful locations: `nbg1` (Nuremberg), `fsn1` (Falkenstein), `hel1` (Helsinki), `ash` (Ashburn VA), `sin` (Singapore)
 
 ### AWS EC2
 
-1. Install and configure the AWS CLI, or prepare an IAM access key with EC2 permissions
-2. Run `npx @golivekit/provision apply` and either provide the access key pair or reuse the configured AWS CLI credentials
-3. Select an existing local public key or let the CLI generate a new one
+#### 1. Create an IAM user
 
-The module provisions an **Elastic IP** so the server IP is stable across reboots.
+1. Open **IAM → Users → Create user** at <https://console.aws.amazon.com/iam/home#/users/create>
+2. Set a username (e.g. `provision`) and click **Next**
+3. Choose **Attach policies directly**, then click **Create policy**
 
-AWS interactive discovery uses the AWS CLI to load the current regions, instance types, and Ubuntu 24.04 AMIs.
+#### 2. Create the IAM policy
+
+In the policy editor switch to **JSON** and paste:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PricingReadOnly",
+      "Effect": "Allow",
+      "Action": ["pricing:GetProducts"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "STSValidate",
+      "Effect": "Allow",
+      "Action": ["sts:GetCallerIdentity"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "EC2Describe",
+      "Effect": "Allow",
+      "Action": ["ec2:Describe*"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "EC2Mutate",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:ImportKeyPair",
+        "ec2:DeleteKeyPair",
+        "ec2:CreateSecurityGroup",
+        "ec2:DeleteSecurityGroup",
+        "ec2:AuthorizeSecurityGroupIngress",
+        "ec2:RevokeSecurityGroupIngress",
+        "ec2:AuthorizeSecurityGroupEgress",
+        "ec2:RevokeSecurityGroupEgress",
+        "ec2:RunInstances",
+        "ec2:TerminateInstances",
+        "ec2:StopInstances",
+        "ec2:StartInstances",
+        "ec2:ModifyInstanceAttribute",
+        "ec2:AllocateAddress",
+        "ec2:ReleaseAddress",
+        "ec2:AssociateAddress",
+        "ec2:DisassociateAddress",
+        "ec2:AssociateVpcCidrBlock",
+        "ec2:DisassociateVpcCidrBlock",
+        "ec2:ModifySubnetAttribute",
+        "ec2:CreateTags"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "BackupsOptional",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole",
+        "iam:DeleteRole",
+        "iam:GetRole",
+        "iam:PassRole",
+        "iam:AttachRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies",
+        "backup:CreateBackupVault",
+        "backup:DeleteBackupVault",
+        "backup:DescribeBackupVault",
+        "backup:CreateBackupPlan",
+        "backup:DeleteBackupPlan",
+        "backup:GetBackupPlan",
+        "backup:CreateBackupSelection",
+        "backup:DeleteBackupSelection",
+        "backup:GetBackupSelection"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+> The `BackupsOptional` block is only needed if you enable daily backup snapshots during setup. You can omit it otherwise.
+
+Name the policy (e.g. `ProvisionEC2Policy`) and click **Create policy**.
+
+#### 3. Attach the policy and get credentials
+
+1. Back in the user creation flow, refresh the policy list, select `ProvisionEC2Policy`, and complete user creation
+2. Open the user → **Security credentials → Create access key**
+3. Choose **Other**, give it a description, and download the key
+
+#### 4. Run the CLI
+
+```bash
+npx @golivekit/provision
+```
+
+Paste the **Access Key ID** and **Secret Access Key** when prompted. No AWS CLI required.
 
 ## What gets installed on the server
 
-The bundled cloud-init template (`cli/terraform/modules/cloud-init/server-init.yaml.tpl`) runs on first boot:
+The bundled cloud-init template (`terraform/modules/cloud-init/server-init.yaml.tpl`) runs on first boot:
 
 - **Docker CE** + **Docker Compose plugin**
 - **UFW** firewall — opens ports 22, 80, 443 only
@@ -106,16 +168,6 @@ The bundled cloud-init template (`cli/terraform/modules/cloud-init/server-init.y
 - **2 GB swapfile** at `/swapfile` with conservative kernel tuning (`vm.swappiness=10`)
 - **`deploy` user** — passwordless sudo, added to the `docker` group
 - `/opt/app` directory — ready for your docker-compose deployment, including a placeholder `.compose.env`
-
-## Release
-
-Tag pushes matching `v*.*.*` publish the package from `cli/`.
-
-```bash
-cd cli
-pnpm version patch
-git push --follow-tags
-```
 
 ## Terraform state
 
@@ -131,4 +183,51 @@ terraform {
     region = "eu-central-1"
   }
 }
+```
+
+---
+
+## Local development
+
+```bash
+git clone git@github.com:golivekit/provision.git
+cd provision
+pnpm install
+pnpm build
+node ./dist/index.js
+```
+
+Terraform source files live in `terraform/`. Update those files when you need to change the bundled provider defaults or cloud-init template. At runtime the CLI copies the provider defaults into `<out>/<provider>/` and runs Terraform there, so `terraform.tfvars`, state, and plan files stay project-scoped and portable.
+
+## Repository layout
+
+```
+.
+├── package.json
+├── tsconfig.json
+├── terraform/                    ← Bundled Terraform defaults published with the package
+│   ├── modules/
+│   │   └── cloud-init/
+│   │       └── server-init.yaml.tpl
+│   └── providers/
+│       ├── aws/
+│       ├── digitalocean/
+│       └── hetzner/
+├── src/
+│   ├── index.ts                  ← entry point (apply / plan / destroy)
+│   ├── providers/
+│   │   ├── digitalocean.ts
+│   │   ├── hetzner.ts
+│   │   └── aws.ts
+│   └── ...                       ← ui, prompts, ssh, terraform, tfvars helpers
+└── .gitignore                    ← secrets & state are git-ignored
+```
+
+## Release
+
+Tag pushes matching `v*.*.*` publish the package from the repo root.
+
+```bash
+pnpm version patch
+git push --follow-tags
 ```

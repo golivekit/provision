@@ -39,6 +39,7 @@ resource "digitalocean_droplet" "server" {
   size      = var.size
   image     = var.image
   backups   = var.backups_enabled
+  monitoring = var.monitoring_enabled
   ipv6      = var.ipv6_enabled
   ssh_keys  = [digitalocean_ssh_key.default.fingerprint]
   user_data = local.user_data

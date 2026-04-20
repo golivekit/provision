@@ -42,9 +42,17 @@ packages:
   - htop
   - unzip
   - jq
+  - unattended-upgrades
 
 # -- Docker daemon config (log rotation) ----------------------------------------
 write_files:
+  # SSH hardening: disable root login and password auth
+  - path: /etc/ssh/sshd_config.d/99-hardening.conf
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      PubkeyAuthentication yes
+
   - path: /etc/docker/daemon.json
     content: |
       {
@@ -83,6 +91,7 @@ write_files:
       ExecStop=/usr/bin/docker compose --env-file .compose.env -f docker-compose-prod.yml down
       Restart=always
       RestartSec=10
+      TimeoutStopSec=30
 
       [Install]
       WantedBy=multi-user.target
@@ -140,6 +149,15 @@ runcmd:
   - mkdir -p /opt/app
   - touch /opt/app/.compose.env
   - chown -R deploy:deploy /opt/app
+
+  # -- SSH hardening -------------------------------------------------------
+  - systemctl restart ssh || systemctl restart sshd
+
+  # -- Unattended security upgrades ----------------------------------------
+  - dpkg-reconfigure -plow unattended-upgrades
+
+  # -- Ensure network-online.target has a waiter ----------------------------
+  - systemctl enable systemd-networkd-wait-online.service || true
 
   # -- Install app systemd service (enabled after the first real deploy) ----
   - systemctl daemon-reload
