@@ -23,6 +23,24 @@ export function header(msg: string): void {
   );
 }
 
+export function logo(): void {
+  const art = [
+    '  ____       _     _            _  ___ _ _',
+    ' / ___| ___ | |   (_)_   _____ | |/ (_) | |_ ',
+    '| |  _ / _ \\| |   | \\ \ / / _ \\| \' /| | __|',
+    '| |_| | (_) | |___| |\\ V /  __/| . \\| | |_ ',
+    ' \\____|\\___/|_____|_| \\_/ \\___||_|\\_\\_|\\__|',
+  ];
+
+  const maxWidth = Math.max(...art.map((line) => line.length));
+  const title = 'Infrastructure Provisioning';
+
+  process.stderr.write(`\n${pc.cyan(art.join('\n'))}\n`);
+  process.stderr.write(
+    `${pc.bold(pc.white(title))}\n${pc.dim('─'.repeat(maxWidth))}\n`,
+  );
+}
+
 export function print(msg: string): void {
   process.stdout.write(`${msg}\n`);
 }

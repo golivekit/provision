@@ -16,7 +16,7 @@ import {
   clearStaleKnownHosts,
   showOutputs,
 } from './terraform.js';
-import { header, info, success, error } from './ui.js';
+import { header, info, success, error, logo } from './ui.js';
 
 import {
   configureDigitalOcean,
@@ -98,7 +98,7 @@ async function promptCloudInit(initialValue?: string): Promise<string | undefine
 }
 
 async function runApplyOrPlan(args: CliArgs): Promise<void> {
-  header('GoLiveKit Infrastructure Provisioning');
+  logo();
 
   await checkDeps();
 
@@ -167,7 +167,8 @@ async function runApplyOrPlan(args: CliArgs): Promise<void> {
 }
 
 async function runDestroy(args: CliArgs): Promise<void> {
-  header('GoLiveKit Infrastructure — DESTROY');
+  logo();
+  header('DESTROY');
 
   await checkDeps();
 

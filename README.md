@@ -1,3 +1,7 @@
+![Provision](./provision.png)
+
+Provision infrastructure for your [GoLiveKit](https://golivekit.com/) app - a Next.js AI driven starter kit.
+
 ## Prerequisites
 
 | Tool | Install |
