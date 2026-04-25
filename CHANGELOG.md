@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/golivekit/provision/compare/v1.0.1...v1.1.0) (2026-04-25)
+
+
+### Features
+
+* add logo function and update UI headers ([e8f1ebc](https://github.com/golivekit/provision/commit/e8f1ebcecbcb06d67c969591f27d69c5b2ebd31d))
+
 ## [1.0.1](https://github.com/golivekit/provision/compare/v1.0.0...v1.0.1) (2026-04-20)
 
 
